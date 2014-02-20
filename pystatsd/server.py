@@ -127,8 +127,14 @@ class Server(object):
         if len(rest) == 1:
             sample_rate = float(re.match('^@([\d\.]+)', rest[0]).group(1))
             if sample_rate == 0:
-                warn("Ignoring counter with sample rate of zero: <%s>" % (metric))
+                warn("Ignoring counter with sample rate of zero: <%s>" % (key))
                 return
+
+        try:
+            value = float(value)
+        except ValueError:
+            warn("Ignoring counter with incorrect value: <%s>:<%s>" % (key, value))
+            return
 
         if key not in self.counters:
             self.counters[key] = [ 0, ts ]
@@ -306,7 +312,7 @@ class Server(object):
             try:
                 self.process(data)
             except Exception as error:
-                log.error("Bad data from %s: %s",addr,error) 
+                log.error("Bad data from %s: %s",addr,error)
 
 
     def stop(self):
@@ -354,7 +360,7 @@ def run_server():
     # Use gmetric
     parser.add_argument('--ganglia-gmetric-exec', dest='gmetric_exec', help='Use gmetric executable. Defaults to /usr/bin/gmetric', type=str, default="/usr/bin/gmetric")
     parser.add_argument('--ganglia-gmetric-options', dest='gmetric_options', help='Options to pass to gmetric. Defaults to -d 60', type=str, default="-d 60")
-    # 
+    #
     parser.add_argument('--flush-interval', dest='flush_interval', help='how often to send data to graphite in millis (default: 10000)', type=int, default=10000)
     parser.add_argument('--no-aggregate-counters', dest='no_aggregate_counters', help='should statsd report counters as absolute instead of count/sec', action='store_true')
     parser.add_argument('--counters-prefix', dest='counters_prefix', help='prefix to append before sending counter data to graphite (default: stats)', type=str, default='stats')
